@@ -1,0 +1,144 @@
+---
+title: "Final Project Machine Learning"
+author: "Edith Reyes Loya"
+date: "30 de septiembre de 2016"
+output: html_document
+---
+<i>
+The objective of this project is to use data from accelerometers on the belt, forearm, arm, and dumbbell of 6 subjects to predict the type of error commited with the Weight Lifting Exercise.
+</i>
+
+<b>
+1. QUESTION
+</b>
+
+<i>
+Is there relation between speed change in space with the correctly ejecution of particular exercise?
+</i>
+
+<b>
+2. DATA
+</b>
+
+<i>
+The data for this project come from:
+
+Velloso, E.; Bulling, A.; Gellersen, H.; Ugulino, W.; Fuks, H. Qualitative Activity Recognition of Weight Lifting Exercises. Proceedings of 4th International Conference in Cooperation with SIGCHI (Augmented Human '13) . Stuttgart, Germany: ACM SIGCHI, 2013.
+
+For more information, visit http://groupware.les.inf.puc-rio.br/har
+
+In particular the training data was get from :
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+
+And validation data from (I will call it "Quiz" data):
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+</i>
+
+```{r get_data, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(caret);library(ggplot2);library(rpart);library(gbm)
+training<-read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv")
+quiz<-read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv")
+```
+<i>
+I have reviewed the Quiz data, because this will be used to predict the values of the end quizz. I noted that there are many variables with only NA's values, so I eliminated all the variables with NA's in the first observation on the Quiz data. I checked that if there is a NA in the first observation, then all the observations have NA's.
+
+First I check that Quiz data and training data have the same variables in the same position, except in the last one. In the last variable of Training is "class"", and in Quiz is "problem_id".
+</i>
+```{r compare_columns, include=TRUE}
+names(training)[is.na(match(as.vector(names(training)),as.vector(names(quiz))))]
+names(quiz)[is.na(match(as.vector(names(training)),as.vector(names(quiz))))]
+columnas<-dim(quiz)[2]
+arreglo<-vector(mode = "logical", length = columnas)
+for(i in 1:columnas) arreglo[i]<-is.na(quiz[1,i])
+ntraining<-training[,!arreglo]
+nquiz<-quiz[,!arreglo]
+dim(ntraining)
+```
+
+<i>
+I divide randomly the training data in Train subset, Test subset and Validation test with the createDataPartition function, in 75% and 25% respectively
+</i>
+
+```{r partition, echo=TRUE}
+set.seed(1000)
+vector<-createDataPartition(y=ntraining$class,p=0.80,list=FALSE)
+paso<-ntraining[vector,]
+validation<-ntraining[-vector,]
+vector<-createDataPartition(y=paso$class,p=0.75,list=FALSE)
+train<-paso[vector,]
+test<-paso[-vector,]
+dim(train);dim(test);dim(validation)
+typecolor=as.numeric(train$classe)
+par(mfrow=c(2,2))
+library(lattice);library(ggplot2)
+plot(train$total_accel_belt,col=typecolor)
+plot(train$total_accel_arm,col=typecolor)
+plot(train$total_accel_forearm,col=typecolor)
+plot(train$total_accel_dumbbell,col=typecolor)
+```
+
+<b>
+3. FEATURES
+</b>
+
+<i>
+I could see in the plot that there is a relation between this variables and classe, but when I modeled using only this variables, I only obtain is an accuracy of 0.45. That is why I prefer use all the valid data.
+
+I will select features with the opcion preProcess="pca"
+</i>
+
+
+<b>
+4. ALGORITHMS
+</b>
+
+<i>
+I will model with the functions that I know for factor modeling. These will be; method="rpart" in "train" funtion , method="bn" in "train" function, and "rpart"" funcion 
+</i>
+
+```{r models, echo=TRUE}
+library(rpart.plot);library(rattle)
+modrp<-train(classe ~ .,method="rpart",preProcess="pca",data=train)
+library(klaR);library(MASS);library(caret);library(rpart)
+modlda<-train(classe~.,method="lda",preProcess="pca",data=train)
+modrpart<-rpart(classe~.,data=train)
+```
+<b>
+6. EVALUATION (CROSS VALIDATION)
+</b>
+<i>
+
+I will evaluate every model with confusionMatrix function.
+I will compare the accuracy rate for every one.
+
+</i>
+```{r evaluation, echo=TRUE}
+predrp<-predict(modrp,test)
+matrp<-confusionMatrix(predrp,test$classe)
+matrp$overall[1]
+predlda<-predict(modlda,test)
+matlda<-confusionMatrix(predlda,test$classe)
+matlda$overall[1]
+predrpart<-predict(modrpart,test,type="class")
+matrpart<-confusionMatrix(predrpart,test$classe)
+matrpart$overall[1]
+```
+<b>
+
+CONCLUSIONS
+</b>
+
+<i>
+Yes, there is a relation between speed change in space with the correctly ejecution of particular exercise
+
+I choose the function <font face="Arial" color="red" size=3>rpart</font> to predict the type of error commited with the Weight Lifting Exercise, because it have the best accuracy. Now I will test it in Validation data to confirm the accuracy with cross validation again.
+
+I know this model don't fit with the quiz data, but I don't know how they were choosen.
+
+</i>
+```{r plots, echo=FALSE}
+predval<-predict(modrpart,validation,type="class")
+matval<-confusionMatrix(predval,validation$classe)
+matval$overall[1]
+```
