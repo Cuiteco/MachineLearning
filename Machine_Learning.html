@@ -202,8 +202,19 @@ matrpart$overall[1]</code></pre>
 <p>I choose the function <font face="Arial" color="red" size="3">rpart</font> to predict the type of error commited with the Weight Lifting Exercise, because it have the best accuracy. Now I will test it in Validation data to confirm the accuracy with cross validation again.</p>
 <p>I know this model don’t fit with the quiz data, but I don’t know how they were choosen.</p>
 <p></i></p>
+<pre class="r"><code>predval&lt;-predict(modrpart,validation,type=&quot;class&quot;)
+matval&lt;-confusionMatrix(predval,validation$classe)
+matval$overall[1]</code></pre>
 <pre><code>## Accuracy 
 ##        1</code></pre>
+<pre class="r"><code>matval$table</code></pre>
+<pre><code>##           Reference
+## Prediction    A    B    C    D    E
+##          A 1116    0    0    0    0
+##          B    0  759    0    0    0
+##          C    0    0  684    0    0
+##          D    0    0    0  643    0
+##          E    0    0    0    0  721</code></pre>
 
 
 

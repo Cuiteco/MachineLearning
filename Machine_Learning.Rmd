@@ -137,8 +137,9 @@ I choose the function <font face="Arial" color="red" size=3>rpart</font> to pred
 I know this model don't fit with the quiz data, but I don't know how they were choosen.
 
 </i>
-```{r plots, echo=FALSE}
+```{r accuracy, echo=TRUE}
 predval<-predict(modrpart,validation,type="class")
 matval<-confusionMatrix(predval,validation$classe)
 matval$overall[1]
+matval$table
 ```
